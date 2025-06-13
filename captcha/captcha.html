@@ -227,6 +227,22 @@
       border-radius: 10px;
       margin-top: 20px;
     }
+
+    .center-text {
+      letter-spacing: .2rem;
+    }
+    
+    @keyframes confuseColors {
+      0% { background-color: #e74c3c; }
+      25% { background-color: #3498db; }
+      50% { background-color: #2ecc71; }
+      75% { background-color: #f1c40f; }
+      100% { background-color: #e74c3c; }
+    }
+    
+    #captcha-container.confusing {
+      animation: confuseColors 0.3s linear infinite;
+    }
   </style>
 </head>
 
@@ -269,6 +285,7 @@
         this.centerBtn = document.getElementById('centerBtn');
         this.centerText = document.getElementById('center-text');
         this.board = document.querySelector('.simon-board');
+        this.captchaContainer = document.querySelector('#captcha-container');
         
         this.bindEvents();
       }
@@ -366,7 +383,7 @@
           this.board.style.transform = `rotate(${this.rotationAngle}deg)`;
         }, 1000/60); // 60fps
       }
-
+      
       stopSpinning() {
         if (this.spinInterval) {
           clearInterval(this.spinInterval);
@@ -446,13 +463,18 @@
         
         // Handle spinning when reaching level 4
         if (this.level >= 4) {
-          const spinSpeed = Math.max(this.baseSpinSpeed - (this.level - 4) * 2, 1); // Change from * 1 to * 2
+          const spinSpeed = Math.max(this.baseSpinSpeed - (this.level - 4) * 2, 1);
           
           if (!this.spinInterval) {
             this.startSpinning(spinSpeed);
           } else {
             this.updateSpinSpeed(spinSpeed);
           }
+        }
+        
+        // Add confusing background animation from level 6
+        if (this.level >= 6) {
+          this.captchaContainer.classList.add('confusing');
         }
         
         await this.delay(700);
@@ -462,7 +484,8 @@
       
       resetGame() {
         this.centerBtn.classList.remove('success', 'fail');
-        this.stopSpinning(); // Add this line
+        this.stopSpinning();
+        this.captchaContainer.classList.remove('confusing');
         
         this.sequence = [];
         this.playerSequence = [];
@@ -484,7 +507,8 @@
         this.isPlaying = false;
         this.isPlayerTurn = false;
         this.gameComplete = true;
-        this.stopSpinning(); // Add this line
+        this.stopSpinning();
+        this.captchaContainer.classList.remove('confusing');
         
         this.centerBtn.classList.add('fail');
         this.centerText.textContent = 'FAIL';
@@ -506,6 +530,7 @@
         this.isPlayerTurn = false;
         this.gameComplete = true;
         this.stopSpinning();
+        this.captchaContainer.classList.remove('confusing');
         
         this.centerText.textContent = 'Done!';
         
