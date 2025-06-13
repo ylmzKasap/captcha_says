@@ -20,6 +20,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      overflow: hidden;
     }
     
     body {
@@ -139,8 +140,8 @@
     
     .center-circle.success {
       background: #2ecc71 !important;
-      animation: successPulse 0.8s ease-in-out;
-      transform: translate(-50%, -50%) scale(1.1);
+      animation: successPulse 0.5s ease-in-out;
+      transform: translate(-50%, -50%);
     }
     
     @keyframes successPulse {
@@ -153,7 +154,7 @@
         box-shadow: inset 0 2px 10px rgba(0,0,0,0.3), 0 0 0 20px rgba(46, 204, 113, 0);
       }
       100% { 
-        transform: translate(-50%, -50%) scale(1.1);
+        transform: translate(-50%, -50%) scale(1);
         box-shadow: inset 0 2px 10px rgba(0,0,0,0.3), 0 0 0 0 rgba(46, 204, 113, 0);
       }
     }
@@ -250,7 +251,9 @@
         this.isPlaying = false;
         this.isPlayerTurn = false;
         this.gameComplete = false;
-        this.maxLevel = 3;
+        this.maxLevel = 8;
+        this.baseDelay = 600;
+        this.baseSpinSpeed = 12;
         
         this.colors = ['red', 'blue', 'green', 'yellow'];
         this.sounds = this.createSounds();
@@ -262,6 +265,7 @@
         this.pieces = document.querySelectorAll('.piece');
         this.centerBtn = document.getElementById('centerBtn');
         this.centerText = document.getElementById('center-text');
+        this.board = document.querySelector('.simon-board');
         
         this.bindEvents();
       }
@@ -324,8 +328,22 @@
       async playSequence() {
         this.isPlayerTurn = false;
         
+        // Update spinning after level 4
+        if (this.level >= 4) {
+          if (!this.board.classList.contains('spinning')) {
+            // First time spinning - start it
+            const spinSpeed = this.baseSpinSpeed - (this.level - 4) * 1;
+            this.board.style.animationDuration = `${Math.max(spinSpeed, 1)}s`;
+            this.board.classList.add('spinning');
+          }
+          // Don't change speed mid-animation - let it continue smoothly
+        }
+        
+        // Calculate delay - gets faster from level 1, more noticeable reduction
+        const currentDelay = Math.max(this.baseDelay - (this.level - 1) * 150, 150);
+        
         for (let i = 0; i < this.sequence.length; i++) {
-          await this.delay(600);
+          await this.delay(currentDelay);
           await this.activatePiece(this.sequence[i]);
         }
         
@@ -395,6 +413,7 @@
         this.isPlaying = false;
         this.isPlayerTurn = false;
         this.gameComplete = true;
+        this.board.classList.remove('spinning');
         
         this.centerBtn.classList.add('fail');
         this.centerText.textContent = 'FAIL';
@@ -415,6 +434,7 @@
         this.isPlaying = false;
         this.isPlayerTurn = false;
         this.gameComplete = true;
+        this.board.classList.remove('spinning');
         
         // Game won animation
         this.centerText.textContent = 'Done!';
@@ -433,23 +453,24 @@
       }
       
       resetGame() {
-        // Clear all animations
-        this.centerBtn.classList.remove('success', 'fail');
-        
-        this.sequence = [];
-        this.playerSequence = [];
-        this.level = 1;
-        this.isPlaying = false;
-        this.isPlayerTurn = false;
-        this.gameComplete = false;
-        
-        this.centerText.textContent = 'START';
-        this.centerBtn.classList.remove('disabled');
-        
-        this.pieces.forEach(piece => {
-          piece.classList.remove('active');
-          piece.classList.remove('clicked');
-        });
+      // Clear all animations
+      this.centerBtn.classList.remove('success', 'fail');
+      this.board.classList.remove('spinning'); // Add this line
+      
+      this.sequence = [];
+      this.playerSequence = [];
+      this.level = 1;
+      this.isPlaying = false;
+      this.isPlayerTurn = false;
+      this.gameComplete = false;
+      
+      this.centerText.textContent = 'START';
+      this.centerBtn.classList.remove('disabled');
+      
+      this.pieces.forEach(piece => {
+        piece.classList.remove('active');
+        piece.classList.remove('clicked');
+      });
       }
       
       delay(ms) {
