@@ -55,6 +55,7 @@
       border-radius: 50%;
       background: #2c3e50;
       box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      transition: none;
     }
     
     .piece {
@@ -122,7 +123,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-       font-size: 1.2em;
+      font-size: 1.2em;
       font-weight: bold;
       color: white;
       box-shadow: inset 0 2px 10px rgba(0,0,0,0.3);
@@ -251,9 +252,11 @@
         this.isPlaying = false;
         this.isPlayerTurn = false;
         this.gameComplete = false;
-        this.maxLevel = 8;
+        this.maxLevel = 7;
         this.baseDelay = 600;
-        this.baseSpinSpeed = 12;
+        this.baseSpinSpeed = 15;
+        this.rotationAngle = 0;
+        this.spinInterval = null;
         
         this.colors = ['red', 'blue', 'green', 'yellow'];
         this.sounds = this.createSounds();
@@ -330,16 +333,16 @@
         
         // Update spinning after level 4
         if (this.level >= 4) {
-          if (!this.board.classList.contains('spinning')) {
-            // First time spinning - start it
-            const spinSpeed = this.baseSpinSpeed - (this.level - 4) * 1;
-            this.board.style.animationDuration = `${Math.max(spinSpeed, 1)}s`;
-            this.board.classList.add('spinning');
+          const spinSpeed = Math.max(this.baseSpinSpeed - (this.level - 4) * 1, 1);
+          
+          if (!this.spinInterval) {
+            this.startSpinning(spinSpeed);
+          } else {
+            this.updateSpinSpeed(spinSpeed);
           }
-          // Don't change speed mid-animation - let it continue smoothly
         }
         
-        // Calculate delay - gets faster from level 1, more noticeable reduction
+        // Calculate delay
         const currentDelay = Math.max(this.baseDelay - (this.level - 1) * 150, 150);
         
         for (let i = 0; i < this.sequence.length; i++) {
@@ -348,6 +351,43 @@
         }
         
         this.isPlayerTurn = true;
+      }
+      
+      startSpinning(speed) {
+        if (this.spinInterval) {
+          clearInterval(this.spinInterval);
+        }
+        
+        const degreesPerSecond = 360 / speed; // degrees per second
+        const degreesPerFrame = degreesPerSecond / 60; // degrees per frame at 60fps
+        
+        this.spinInterval = setInterval(() => {
+          this.rotationAngle = (this.rotationAngle + degreesPerFrame) % 360;
+          this.board.style.transform = `rotate(${this.rotationAngle}deg)`;
+        }, 1000/60); // 60fps
+      }
+
+      stopSpinning() {
+        if (this.spinInterval) {
+          clearInterval(this.spinInterval);
+          this.spinInterval = null;
+        }
+        this.board.style.transform = 'rotate(0deg)';
+        this.rotationAngle = 0;
+      }
+      
+      updateSpinSpeed(speed) {
+        if (this.spinInterval) {
+          clearInterval(this.spinInterval);
+          
+          const degreesPerSecond = 360 / speed;
+          const degreesPerFrame = degreesPerSecond / 60;
+          
+          this.spinInterval = setInterval(() => {
+            this.rotationAngle = (this.rotationAngle + degreesPerFrame) % 360;
+            this.board.style.transform = `rotate(${this.rotationAngle}deg)`;
+          }, 1000/60);
+        }
       }
       
       async activatePiece(color) {
@@ -402,18 +442,49 @@
         this.centerBtn.classList.remove('success');
         
         this.level++;
-        this.centerText.textContent = `${this.level}/${this.maxLevel}`;;
+        this.centerText.textContent = `${this.level}/${this.maxLevel}`;
+        
+        // Handle spinning when reaching level 4
+        if (this.level >= 4) {
+          const spinSpeed = Math.max(this.baseSpinSpeed - (this.level - 4) * 2, 1); // Change from * 1 to * 2
+          
+          if (!this.spinInterval) {
+            this.startSpinning(spinSpeed);
+          } else {
+            this.updateSpinSpeed(spinSpeed);
+          }
+        }
         
         await this.delay(700);
         this.addToSequence();
         this.playSequence();
       }
       
+      resetGame() {
+        this.centerBtn.classList.remove('success', 'fail');
+        this.stopSpinning(); // Add this line
+        
+        this.sequence = [];
+        this.playerSequence = [];
+        this.level = 1;
+        this.isPlaying = false;
+        this.isPlayerTurn = false;
+        this.gameComplete = false;
+        
+        this.centerText.textContent = 'START';
+        this.centerBtn.classList.remove('disabled');
+        
+        this.pieces.forEach(piece => {
+          piece.classList.remove('active');
+          piece.classList.remove('clicked');
+        });
+      }
+      
       async gameOver() {
         this.isPlaying = false;
         this.isPlayerTurn = false;
         this.gameComplete = true;
-        this.board.classList.remove('spinning');
+        this.stopSpinning(); // Add this line
         
         this.centerBtn.classList.add('fail');
         this.centerText.textContent = 'FAIL';
@@ -434,50 +505,19 @@
         this.isPlaying = false;
         this.isPlayerTurn = false;
         this.gameComplete = true;
-        this.board.classList.remove('spinning');
+        this.stopSpinning();
         
-        // Game won animation
         this.centerText.textContent = 'Done!';
         
         await this.delay(1500);
         captchaSuccess()
-        
-        /* // Reset game state after winning
-        this.sequence = [];
-        this.playerSequence = [];
-        this.level = 1;
-        this.gameComplete = false;
-        
-        this.centerBtn.classList.remove('disabled');
-        this.centerText.textContent = 'PLAY'; */
-      }
-      
-      resetGame() {
-      // Clear all animations
-      this.centerBtn.classList.remove('success', 'fail');
-      this.board.classList.remove('spinning'); // Add this line
-      
-      this.sequence = [];
-      this.playerSequence = [];
-      this.level = 1;
-      this.isPlaying = false;
-      this.isPlayerTurn = false;
-      this.gameComplete = false;
-      
-      this.centerText.textContent = 'START';
-      this.centerBtn.classList.remove('disabled');
-      
-      this.pieces.forEach(piece => {
-        piece.classList.remove('active');
-        piece.classList.remove('clicked');
-      });
       }
       
       delay(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
       }
     }
-
+    
     document.addEventListener('DOMContentLoaded', () => {
       new SimonGame();
     });
