@@ -239,13 +239,13 @@
     }
     
     @keyframes confuseColors {
-      0% { background-color: #e74c3c; }
-      25% { background-color: #3498db; }
-      50% { background-color: #2ecc71; }
-      75% { background-color: #f1c40f; }
-      100% { background-color: #e74c3c; }
+      0% { background-color: rgba(231, 76, 60, var(--confusion-opacity, 0.3)); }
+      25% { background-color: rgba(52, 152, 219, var(--confusion-opacity, 0.3)); }
+      50% { background-color: rgba(46, 204, 113, var(--confusion-opacity, 0.3)); }
+      75% { background-color: rgba(241, 196, 15, var(--confusion-opacity, 0.3)); }
+      100% { background-color: rgba(231, 76, 60, var(--confusion-opacity, 0.3)); }
     }
-    
+
     #captcha-container.confusing {
       animation: confuseColors 0.3s linear infinite;
     }
@@ -366,7 +366,7 @@
         
         // Update spinning after level 4
         if (this.level >= 4) {
-          const spinSpeed = Math.max(this.baseSpinSpeed - (this.level - 4) * 1, 1);
+          const spinSpeed = Math.max(this.baseSpinSpeed - (this.level - 4) * 3, 2);
           
           if (!this.spinInterval) {
             this.startSpinning(spinSpeed);
@@ -376,7 +376,7 @@
         }
         
         // Calculate delay
-        const currentDelay = Math.max(this.baseDelay - (this.level - 1) * 150, 150);
+        const currentDelay = Math.max(this.baseDelay - (this.level - 1) * 120, 100);
         
         for (let i = 0; i < this.sequence.length; i++) {
           await this.delay(currentDelay);
@@ -429,7 +429,9 @@
         piece.classList.add('active');
         this.sounds.play(color);
         
-        await this.delay(400);
+        // Reduce note duration for higher levels
+        const noteDuration = Math.max(400 - (this.level - 1) * 30, 150);
+        await this.delay(noteDuration);
         piece.classList.remove('active');
       }
       
@@ -477,21 +479,24 @@
         
         this.level++;
         this.centerText.textContent = `${this.level}/${this.maxLevel}`;
+
+        // Add confusing background animation from level 3
+        if (this.level >= 3) {
+          // Calculate opacity: starts at 0.2 (level 3) and reaches 1.0 (level 6+)
+          const intensity = Math.min(0.2 + (this.level - 3) * 0.2, 1.0);
+          this.captchaContainer.style.setProperty('--confusion-opacity', intensity);
+          this.captchaContainer.classList.add('confusing');
+        }
         
         // Handle spinning when reaching level 4
         if (this.level >= 4) {
-          const spinSpeed = Math.max(this.baseSpinSpeed - (this.level - 4) * 2, 1);
+          const spinSpeed = Math.max(this.baseSpinSpeed - (this.level - 4) * 3, 2);
           
           if (!this.spinInterval) {
             this.startSpinning(spinSpeed);
           } else {
             this.updateSpinSpeed(spinSpeed);
           }
-        }
-        
-        // Add confusing background animation from level 6
-        if (this.level >= 6) {
-          this.captchaContainer.classList.add('confusing');
         }
         
         // Add bouncing animation at level 7
@@ -566,6 +571,8 @@
         this.stopSpinning();
         this.stopBouncing();
         this.captchaContainer.classList.remove('confusing');
+        this.captchaContainer.style.removeProperty('--confusion-opacity');
+        
         
         this.sequence = [];
         this.playerSequence = [];
@@ -590,6 +597,7 @@
         this.stopSpinning();
         this.stopBouncing();
         this.captchaContainer.classList.remove('confusing');
+        this.captchaContainer.style.removeProperty('--confusion-opacity');
         
         this.centerBtn.classList.add('fail');
         this.centerText.textContent = 'FAIL';
@@ -613,6 +621,7 @@
         this.stopSpinning();
         this.stopBouncing();
         this.captchaContainer.classList.remove('confusing');
+        this.captchaContainer.style.removeProperty('--confusion-opacity');
         
         this.centerText.textContent = 'Done!';
         
