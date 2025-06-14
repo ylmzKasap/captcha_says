@@ -21,6 +21,12 @@
       align-items: center;
       justify-content: center;
       overflow: hidden;
+      position: relative;
+    }
+    
+    #captcha-container:has(.simon-board.bouncing) {
+      align-items: flex-start;
+      justify-content: flex-start;
     }
     
     body {
@@ -227,7 +233,7 @@
       border-radius: 10px;
       margin-top: 20px;
     }
-
+    
     .center-text {
       letter-spacing: .2rem;
     }
@@ -242,6 +248,11 @@
     
     #captcha-container.confusing {
       animation: confuseColors 0.3s linear infinite;
+    }
+    
+    .simon-board.bouncing {
+      box-shadow: none !important;
+      transform-origin: center center !important;
     }
   </style>
 </head>
@@ -273,6 +284,11 @@
         this.baseSpinSpeed = 15;
         this.rotationAngle = 0;
         this.spinInterval = null;
+        this.boardX = 0; // Position relative to container center
+        this.boardY = 0;
+        this.velocityX = 2; // Pixels per frame
+        this.velocityY = 1.5;
+        this.bounceInterval = null;
         
         this.colors = ['red', 'blue', 'green', 'yellow'];
         this.sounds = this.createSounds();
@@ -375,12 +391,18 @@
           clearInterval(this.spinInterval);
         }
         
-        const degreesPerSecond = 360 / speed; // degrees per second
-        const degreesPerFrame = degreesPerSecond / 60; // degrees per frame at 60fps
+        // This interval ONLY calculates the new angle. It does not touch the DOM.
+        const degreesPerSecond = 360 / speed;
+        const degreesPerFrame = degreesPerSecond / 60; 
         
         this.spinInterval = setInterval(() => {
           this.rotationAngle = (this.rotationAngle + degreesPerFrame) % 360;
-          this.board.style.transform = `rotate(${this.rotationAngle}deg)`;
+          
+          // If the board is NOT bouncing, we still need to apply the rotation.
+          // If it IS bouncing, the bounceInterval will handle it.
+          if (!this.bounceInterval) {
+            this.board.style.transform = `rotate(${this.rotationAngle}deg)`;
+          }
         }, 1000/60); // 60fps
       }
       
@@ -389,22 +411,17 @@
           clearInterval(this.spinInterval);
           this.spinInterval = null;
         }
-        this.board.style.transform = 'rotate(0deg)';
-        this.rotationAngle = 0;
+        
+        // Only reset rotation if the board is not also bouncing.
+        // If it is bouncing, the transform is managed by bounceInterval.
+        if (!this.bounceInterval) {
+          this.board.style.transform = 'rotate(0deg)';
+          this.rotationAngle = 0;
+        }
       }
       
       updateSpinSpeed(speed) {
-        if (this.spinInterval) {
-          clearInterval(this.spinInterval);
-          
-          const degreesPerSecond = 360 / speed;
-          const degreesPerFrame = degreesPerSecond / 60;
-          
-          this.spinInterval = setInterval(() => {
-            this.rotationAngle = (this.rotationAngle + degreesPerFrame) % 360;
-            this.board.style.transform = `rotate(${this.rotationAngle}deg)`;
-          }, 1000/60);
-        }
+        this.startSpinning(speed);
       }
       
       async activatePiece(color) {
@@ -477,14 +494,77 @@
           this.captchaContainer.classList.add('confusing');
         }
         
+        // Add bouncing animation at level 7
+        if (this.level >= 7) {
+          this.startBouncing();
+        }
+        
         await this.delay(700);
         this.addToSequence();
         this.playSequence();
       }
       
+      startBouncing() {
+        if (this.bounceInterval) return;
+        
+        this.board.classList.add('bouncing');
+        
+        const containerWidth = 390;
+        const containerHeight = 300;
+        const boardSize = 250;
+        const maxX = containerWidth - boardSize;
+        const maxY = containerHeight - boardSize;
+        
+        // Set the initial coordinates for the center
+        this.boardX = maxX / 2;
+        this.boardY = maxY / 2;
+        
+        // Apply the initial transform immediately before the interval starts.
+        // This ensures the board starts in the middle, not the top-left.
+        this.board.style.transform = `translate(${this.boardX}px, ${this.boardY}px) rotate(${this.rotationAngle}deg)`;
+        
+        this.bounceInterval = setInterval(() => {
+          this.boardX += this.velocityX;
+          this.boardY += this.velocityY;
+          
+          if (this.boardX >= maxX) {
+            this.velocityX *= -1;
+            this.boardX = maxX;
+          } else if (this.boardX <= 0) {
+            this.velocityX *= -1;
+            this.boardX = 0;
+          }
+          
+          if (this.boardY >= maxY) {
+            this.velocityY *= -1;
+            this.boardY = maxY;
+          } else if (this.boardY <= 0) {
+            this.velocityY *= -1;
+            this.boardY = 0;
+          }
+          
+          // --- DOM Update ---
+          // The interval now takes over, updating from the initial position.
+          this.board.style.transform = `translate(${this.boardX}px, ${this.boardY}px) rotate(${this.rotationAngle}deg)`;
+        }, 16); // ~60fps
+      }
+      
+      stopBouncing() {
+        if (this.bounceInterval) {
+          clearInterval(this.bounceInterval);
+          this.bounceInterval = null;
+        }
+        this.board.classList.remove('bouncing');
+        this.board.style.transform = '';
+        this.boardX = 0;
+        this.boardY = 0;
+        this.rotationAngle = 0;
+      }
+      
       resetGame() {
         this.centerBtn.classList.remove('success', 'fail');
         this.stopSpinning();
+        this.stopBouncing();
         this.captchaContainer.classList.remove('confusing');
         
         this.sequence = [];
@@ -508,6 +588,7 @@
         this.isPlayerTurn = false;
         this.gameComplete = true;
         this.stopSpinning();
+        this.stopBouncing();
         this.captchaContainer.classList.remove('confusing');
         
         this.centerBtn.classList.add('fail');
@@ -530,6 +611,7 @@
         this.isPlayerTurn = false;
         this.gameComplete = true;
         this.stopSpinning();
+        this.stopBouncing();
         this.captchaContainer.classList.remove('confusing');
         
         this.centerText.textContent = 'Done!';
