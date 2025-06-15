@@ -234,8 +234,9 @@
       margin-top: 20px;
     }
     
-    .center-text {
-      letter-spacing: .2rem;
+    #center-text {
+      letter-spacing: .1rem;
+      z-index: 3;
     }
     
     @keyframes confuseColors {
@@ -245,7 +246,7 @@
       75% { background-color: rgba(241, 196, 15, var(--confusion-opacity, 0.3)); }
       100% { background-color: rgba(231, 76, 60, var(--confusion-opacity, 0.3)); }
     }
-
+    
     #captcha-container.confusing {
       animation: confuseColors 0.3s linear infinite;
     }
@@ -253,6 +254,26 @@
     .simon-board.bouncing {
       box-shadow: none !important;
       transform-origin: center center !important;
+    }
+    
+    #timer-ring {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.414);
+      transform: scale(1); /* Initial size */
+      opacity: 1;
+      transition: transform linear, opacity linear;
+      pointer-events: none;
+    }
+    
+    #timer-ring.hidden {
+      opacity: 0;
+      transform: scale(0);
     }
   </style>
 </head>
@@ -265,7 +286,9 @@
       <div class="piece green" data-color="green"></div>
       <div class="piece yellow" data-color="yellow"></div>
       <div class="center-circle" id="centerBtn">
-        <span id="center-text">START</span>
+        <div id="timer-ring"></div> 
+       <span id="center-text">START</span>
+      </div> 
       </div>
     </div>
   </div>
@@ -289,6 +312,9 @@
         this.velocityX = 2; // Pixels per frame
         this.velocityY = 1.5;
         this.bounceInterval = null;
+        this.timer = null;
+        this.timerDuration = 3000;
+        this.timerElement = null;
         
         this.colors = ['red', 'blue', 'green', 'yellow'];
         this.sounds = this.createSounds();
@@ -302,6 +328,7 @@
         this.centerText = document.getElementById('center-text');
         this.board = document.querySelector('.simon-board');
         this.captchaContainer = document.querySelector('#captcha-container');
+        this.timerElement = document.getElementById('timer-ring');
         
         this.bindEvents();
       }
@@ -363,6 +390,7 @@
       
       async playSequence() {
         this.isPlayerTurn = false;
+        this.stopTimer(); // Stop timer while computer is playing
         
         // Update spinning after level 4
         if (this.level >= 4) {
@@ -384,6 +412,7 @@
         }
         
         this.isPlayerTurn = true;
+        this.startTimer();
       }
       
       startSpinning(speed) {
@@ -455,6 +484,7 @@
           return;
         }
         
+        this.stopTimer(); // Stop timer after a correct click
         if (this.playerSequence.length === this.sequence.length) {
           this.playerSequence = [];
           
@@ -464,12 +494,41 @@
             this.levelUp();
           }
         } else {
-          setTimeout(() => {
-            if (this.isPlaying && !this.gameComplete) {
-              this.isPlayerTurn = true;
-            }
-          }, 200);
+          // If the round is not complete, reset the timer for the next click
+          this.startTimer();
+          this.isPlayerTurn = true;
         }
+      }
+      
+      startTimer() {
+        this.stopTimer();
+        this.timerElement.classList.remove('hidden');
+        
+        // Reset the timer ring's animation
+        this.timerElement.style.transition = 'none';
+        this.timerElement.style.transform = 'scale(1)';
+        this.timerElement.style.opacity = '1';
+        this.timerElement.offsetHeight;
+        
+        // Start the shrinking animation
+        this.timerElement.style.transition = `transform ${this.timerDuration}ms linear, opacity ${this.timerDuration}ms linear`;
+        this.timerElement.style.transform = 'scale(0)';
+        this.timerElement.style.opacity = '0';
+        
+        this.timer = setTimeout(() => {
+          this.gameOver(); // If timer runs out, it's game over
+        }, this.timerDuration);
+      }
+      
+      stopTimer() {
+        if (this.timer) {
+          clearTimeout(this.timer);
+          this.timer = null;
+        }
+        this.timerElement.classList.add('hidden'); // Hide the timer ring
+        this.timerElement.style.transition = 'none'; // Reset transition for instant hide
+        this.timerElement.style.transform = 'scale(1)'; // Reset scale for next start
+        this.timerElement.style.opacity = '1'; // Reset opacity for next start
       }
       
       async levelUp() {
@@ -479,7 +538,7 @@
         
         this.level++;
         this.centerText.textContent = `${this.level}/${this.maxLevel}`;
-
+        
         // Add confusing background animation from level 3
         if (this.level >= 3) {
           // Calculate opacity: starts at 0.2 (level 3) and reaches 1.0 (level 6+)
@@ -570,6 +629,7 @@
         this.centerBtn.classList.remove('success', 'fail');
         this.stopSpinning();
         this.stopBouncing();
+        this.stopTimer();
         this.captchaContainer.classList.remove('confusing');
         this.captchaContainer.style.removeProperty('--confusion-opacity');
         
@@ -596,6 +656,7 @@
         this.gameComplete = true;
         this.stopSpinning();
         this.stopBouncing();
+        this.stopTimer();
         this.captchaContainer.classList.remove('confusing');
         this.captchaContainer.style.removeProperty('--confusion-opacity');
         
@@ -620,6 +681,7 @@
         this.gameComplete = true;
         this.stopSpinning();
         this.stopBouncing();
+        this.stopTimer();
         this.captchaContainer.classList.remove('confusing');
         this.captchaContainer.style.removeProperty('--confusion-opacity');
         
