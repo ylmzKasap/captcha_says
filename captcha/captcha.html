@@ -302,7 +302,6 @@
         this.isPlaying = false;
         this.isPlayerTurn = false;
         this.gameComplete = false;
-        this.maxLevel = 7;
         this.baseDelay = 600;
         this.baseSpinSpeed = 15;
         this.rotationAngle = 0;
@@ -315,6 +314,8 @@
         this.timer = null;
         this.timerDuration = 3000;
         this.timerElement = null;
+        const n = Math.random(); // For random max level
+        this.maxLevel = n <= .5 ? 7 : n <= .9 ? 8 : 9;
         
         this.colors = ['red', 'blue', 'green', 'yellow'];
         this.sounds = this.createSounds();
