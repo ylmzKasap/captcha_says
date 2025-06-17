@@ -15,6 +15,6 @@ The CAPTCHA is a digital Simon Says game that becomes infuriatingly harder with 
   - In round 3 the background starts flashing random colors to confuse the player which take full effect in round 6.
   - In round 4 the platform starts spinning.
   - In round 7 the platform starts bouncing off the edges of the CAPTCHA container.
-  - Spinning, bouncing, and the speed at which pieces are played by the computer increase in the later rounds.
+  - Spinning and the speed at which pieces are played by the computer increase each round.
 
 
