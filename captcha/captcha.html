@@ -275,6 +275,10 @@
       opacity: 0;
       transform: scale(0);
     }
+
+    #captcha-container.grayscale {
+      filter: grayscale(1);
+    }
   </style>
 </head>
 
@@ -559,6 +563,10 @@
             this.updateSpinSpeed(spinSpeed);
           }
         }
+
+        if (this.level >= 6) {
+          this.captchaContainer.classList.add('grayscale');
+        }
         
         // Add bouncing animation at level 7
         if (this.level >= 7) {
@@ -632,7 +640,7 @@
         this.stopSpinning();
         this.stopBouncing();
         this.stopTimer();
-        this.captchaContainer.classList.remove('confusing');
+        this.captchaContainer.classList.remove('confusing', 'grayscale');
         this.captchaContainer.style.removeProperty('--confusion-opacity');
         
         
@@ -659,7 +667,7 @@
         this.stopSpinning();
         this.stopBouncing();
         this.stopTimer();
-        this.captchaContainer.classList.remove('confusing');
+        this.captchaContainer.classList.remove('confusing', 'grayscale');
         this.captchaContainer.style.removeProperty('--confusion-opacity');
         
         this.centerBtn.classList.add('fail');
@@ -684,7 +692,7 @@
         this.stopSpinning();
         this.stopBouncing();
         this.stopTimer();
-        this.captchaContainer.classList.remove('confusing');
+        this.captchaContainer.classList.remove('confusing', 'grayscale');
         this.captchaContainer.style.removeProperty('--confusion-opacity');
         
         this.centerText.textContent = 'Done!';
