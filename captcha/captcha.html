@@ -315,12 +315,13 @@
         this.boardY = 0;
         this.velocityX = 2; // Pixels per frame
         this.velocityY = 1.5;
+        this.spinDirection = 1;
         this.bounceInterval = null;
         this.timer = null;
         this.timerDuration = 3000;
         this.timerElement = null;
         const n = Math.random(); // For random max level
-        this.maxLevel = n <= .5 ? 7 : n <= .9 ? 8 : 9;
+        this.maxLevel = n <= .45 ? 7 : n <= .9 ? 8 : 9;
         
         this.colors = ['red', 'blue', 'green', 'yellow'];
         this.sounds = this.createSounds();
@@ -431,14 +432,12 @@
         const degreesPerFrame = degreesPerSecond / 60; 
         
         this.spinInterval = setInterval(() => {
-          this.rotationAngle = (this.rotationAngle + degreesPerFrame) % 360;
+          this.rotationAngle = (this.rotationAngle + (degreesPerFrame * this.spinDirection)) % 360;
           
-          // If the board is NOT bouncing, we still need to apply the rotation.
-          // If it IS bouncing, the bounceInterval will handle it.
           if (!this.bounceInterval) {
             this.board.style.transform = `rotate(${this.rotationAngle}deg)`;
           }
-        }, 1000/60); // 60fps
+        }, 1000/60);
       }
       
       stopSpinning() {
@@ -483,6 +482,10 @@
         
         this.sounds.play(clickedColor);
         this.playerSequence.push(clickedColor);
+
+        if (this.level >= 5 && this.spinInterval) {
+          this.spinDirection *= -1;
+        }
         
         const currentIndex = this.playerSequence.length - 1;
         if (this.playerSequence[currentIndex] !== this.sequence[currentIndex]) {
@@ -650,6 +653,7 @@
         this.isPlaying = false;
         this.isPlayerTurn = false;
         this.gameComplete = false;
+        this.spinDirection = 1;
         
         this.centerText.textContent = 'START';
         this.centerBtn.classList.remove('disabled');
@@ -680,6 +684,7 @@
         this.playerSequence = [];
         this.level = 1;
         this.gameComplete = false;
+        this.spinDirection = 1;
         
         this.centerBtn.classList.remove('disabled');
         this.centerText.textContent = 'RETRY';
@@ -694,6 +699,7 @@
         this.stopTimer();
         this.captchaContainer.classList.remove('confusing', 'grayscale');
         this.captchaContainer.style.removeProperty('--confusion-opacity');
+        this.spinDirection = 1;
         
         this.centerText.textContent = 'Done!';
         
