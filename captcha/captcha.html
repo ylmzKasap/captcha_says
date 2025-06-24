@@ -320,7 +320,7 @@
         this.timer = null;
         this.timerDuration = 3000;
         this.timerElement = null;
-        this.baseClickBoost = 2;
+        this.baseClickBoost = 0.5;
         this.clickSpeedBoost = 0;
         const n = Math.random(); // For random max level
         this.maxLevel = n <= .45 ? 7 : n <= .9 ? 8 : 9;
@@ -403,7 +403,7 @@
         
         // Update spinning after level 4
         if (this.level >= 4) {
-          const spinSpeed = Math.max(this.baseSpinSpeed - (this.level - 4) * 3 - this.clickSpeedBoost, 2);
+          const spinSpeed = Math.max(this.baseSpinSpeed - (this.level - 4) * 3 - this.clickSpeedBoost, 3);
           
           if (!this.spinInterval) {
             this.startSpinning(spinSpeed);
@@ -491,7 +491,8 @@
 
         if (this.level >= 4 && this.spinInterval) {
           this.clickSpeedBoost += this.baseClickBoost;
-          this.updateSpinSpeed(Math.max(this.baseSpinSpeed - (this.level - 4) * 3 - this.clickSpeedBoost, 2));
+          const newSpeed = Math.max(this.baseSpinSpeed - (this.level - 4) * 3 - this.clickSpeedBoost, 4);
+          this.updateSpinSpeed(newSpeed);
         }
         
         const currentIndex = this.playerSequence.length - 1;
@@ -566,7 +567,7 @@
         
         // Handle spinning when reaching level 4
         if (this.level >= 4) {
-          const spinSpeed = Math.max(this.baseSpinSpeed - (this.level - 4) * 3 - this.clickSpeedBoost, 2);
+          const spinSpeed = Math.max(this.baseSpinSpeed - (this.level - 4) * 3 - this.clickSpeedBoost, 4);
           
           if (!this.spinInterval) {
             this.startSpinning(spinSpeed);
