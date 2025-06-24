@@ -320,6 +320,8 @@
         this.timer = null;
         this.timerDuration = 3000;
         this.timerElement = null;
+        this.baseClickBoost = 2;
+        this.clickSpeedBoost = 0;
         const n = Math.random(); // For random max level
         this.maxLevel = n <= .45 ? 7 : n <= .9 ? 8 : 9;
         
@@ -401,7 +403,7 @@
         
         // Update spinning after level 4
         if (this.level >= 4) {
-          const spinSpeed = Math.max(this.baseSpinSpeed - (this.level - 4) * 3, 2);
+          const spinSpeed = Math.max(this.baseSpinSpeed - (this.level - 4) * 3 - this.clickSpeedBoost, 2);
           
           if (!this.spinInterval) {
             this.startSpinning(spinSpeed);
@@ -486,6 +488,11 @@
         if (this.level >= 5 && this.spinInterval) {
           this.spinDirection *= -1;
         }
+
+        if (this.level >= 4 && this.spinInterval) {
+          this.clickSpeedBoost += this.baseClickBoost;
+          this.updateSpinSpeed(Math.max(this.baseSpinSpeed - (this.level - 4) * 3 - this.clickSpeedBoost, 2));
+        }
         
         const currentIndex = this.playerSequence.length - 1;
         if (this.playerSequence[currentIndex] !== this.sequence[currentIndex]) {
@@ -500,6 +507,7 @@
           if (this.level >= this.maxLevel) {
             this.gameWon();
           } else {
+            this.clickSpeedBoost = 0
             this.levelUp();
           }
         } else {
@@ -558,7 +566,7 @@
         
         // Handle spinning when reaching level 4
         if (this.level >= 4) {
-          const spinSpeed = Math.max(this.baseSpinSpeed - (this.level - 4) * 3, 2);
+          const spinSpeed = Math.max(this.baseSpinSpeed - (this.level - 4) * 3 - this.clickSpeedBoost, 2);
           
           if (!this.spinInterval) {
             this.startSpinning(spinSpeed);
@@ -654,6 +662,7 @@
         this.isPlayerTurn = false;
         this.gameComplete = false;
         this.spinDirection = 1;
+        this.clickSpeedBoost = 0;
         
         this.centerText.textContent = 'START';
         this.centerBtn.classList.remove('disabled');
@@ -685,6 +694,7 @@
         this.level = 1;
         this.gameComplete = false;
         this.spinDirection = 1;
+        this.clickSpeedBoost = 0;
         
         this.centerBtn.classList.remove('disabled');
         this.centerText.textContent = 'RETRY';
@@ -700,6 +710,7 @@
         this.captchaContainer.classList.remove('confusing', 'grayscale');
         this.captchaContainer.style.removeProperty('--confusion-opacity');
         this.spinDirection = 1;
+        this.clickSpeedBoost = 0;
         
         this.centerText.textContent = 'Done!';
         
