@@ -320,8 +320,9 @@
         this.timer = null;
         this.timerDuration = 3000;
         this.timerElement = null;
-        this.baseClickBoost = 0.5;
+        this.baseClickBoost = 2;
         this.clickSpeedBoost = 0;
+        this.attempts = 0;
         const n = Math.random(); // For random max level
         this.maxLevel = n <= .45 ? 7 : n <= .9 ? 8 : 9;
         
@@ -375,10 +376,8 @@
       }
       
       handleCenterClick() {
-        if (!this.isPlaying) {
+        if (!this.isPlaying && !this.gameComplete) {
           this.startGame();
-        } else if (this.gameComplete) {
-          this.resetGame();
         }
       }
       
@@ -403,8 +402,7 @@
         
         // Update spinning after level 4
         if (this.level >= 4) {
-          const spinSpeed = Math.max(this.baseSpinSpeed - (this.level - 4) * 3 - this.clickSpeedBoost, 3);
-          
+          const spinSpeed = Math.max(this.baseSpinSpeed - (this.level - 4) * 3 - this.clickSpeedBoost, 4 - (2 - (this.attempts * .5)));
           if (!this.spinInterval) {
             this.startSpinning(spinSpeed);
           } else {
@@ -491,8 +489,8 @@
 
         if (this.level >= 4 && this.spinInterval) {
           this.clickSpeedBoost += this.baseClickBoost;
-          const newSpeed = Math.max(this.baseSpinSpeed - (this.level - 4) * 3 - this.clickSpeedBoost, 4);
-          this.updateSpinSpeed(newSpeed);
+          const spinSpeed = Math.max(this.baseSpinSpeed - (this.level - 4) * 3 - this.clickSpeedBoost, 4 - (2 - (this.attempts * .5)));
+          this.updateSpinSpeed(spinSpeed);
         }
         
         const currentIndex = this.playerSequence.length - 1;
@@ -567,7 +565,7 @@
         
         // Handle spinning when reaching level 4
         if (this.level >= 4) {
-          const spinSpeed = Math.max(this.baseSpinSpeed - (this.level - 4) * 3 - this.clickSpeedBoost, 4);
+          const spinSpeed = Math.max(this.baseSpinSpeed - (this.level - 4) * 3 - this.clickSpeedBoost, 4 - (2 - (this.attempts * .5)));
           
           if (!this.spinInterval) {
             this.startSpinning(spinSpeed);
@@ -647,33 +645,6 @@
         this.rotationAngle = 0;
       }
       
-      resetGame() {
-        this.centerBtn.classList.remove('success', 'fail');
-        this.stopSpinning();
-        this.stopBouncing();
-        this.stopTimer();
-        this.captchaContainer.classList.remove('confusing', 'grayscale');
-        this.captchaContainer.style.removeProperty('--confusion-opacity');
-        
-        
-        this.sequence = [];
-        this.playerSequence = [];
-        this.level = 1;
-        this.isPlaying = false;
-        this.isPlayerTurn = false;
-        this.gameComplete = false;
-        this.spinDirection = 1;
-        this.clickSpeedBoost = 0;
-        
-        this.centerText.textContent = 'START';
-        this.centerBtn.classList.remove('disabled');
-        
-        this.pieces.forEach(piece => {
-          piece.classList.remove('active');
-          piece.classList.remove('clicked');
-        });
-      }
-      
       async gameOver() {
         this.isPlaying = false;
         this.isPlayerTurn = false;
@@ -689,6 +660,10 @@
         
         await this.delay(600);
         this.centerBtn.classList.remove('fail');
+
+        if (this.level >= 1 && this.attempts < 4) {
+          this.attempts = this.attempts + 1;
+        }
         
         this.sequence = [];
         this.playerSequence = [];
@@ -696,6 +671,7 @@
         this.gameComplete = false;
         this.spinDirection = 1;
         this.clickSpeedBoost = 0;
+        this.baseClickBoost = Math.max(2 - (this.attempts * .5), .5)
         
         this.centerBtn.classList.remove('disabled');
         this.centerText.textContent = 'RETRY';

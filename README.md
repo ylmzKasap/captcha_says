@@ -19,5 +19,7 @@ The CAPTCHA is a digital Simon Says game that becomes infuriatingly harder with 
     - In round 7 the platform starts bouncing off the edges of the CAPTCHA container.
     - Spinning and the speed at which pieces are played by the computer increase each round.
     - The platform spins increasingly faster with each user click, which resets at the beginning of a turn.
+    - The platform spins a lot faster with each click when you first launch the game, but the spinning slows down
+    and becomes more fair after 4 attempts. 
 
 
