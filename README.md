@@ -1,5 +1,8 @@
 # CAPTCHA Says
-This repository is created for Kitboga Code Jam 2025.
+This repository is created for Kitboga Code Jam 2025.  
+  
+Try here: https://ylmzkasap.github.io/captcha_says/  
+Watch Kitboga playing it: https://www.youtube.com/watch?v=2ROtppBZmWA
 
 # The Rules
 The CAPTCHA is a digital Simon Says game that becomes infuriatingly harder with each turn.
